@@ -5,24 +5,29 @@ database="Data-project"
 user="postgres"
 password="Cristiano15+"
 
-try:
-    connection=psycopg2.connect(
+def connect_to_db(host,database,user,password):
+    try:
+        connection=psycopg2.connect(
         host=host,
         database=database,
         user=user,
         password=password
     )
 
-    cursor=connection.cursor()
+        cursor=connection.cursor()
 
-    cursor.execute("SELECT version()")
+        cursor.execute("SELECT version()")
 
-    db_version=cursor.fetchone()
+        db_version=cursor.fetchone()
 
-    print(f"Connected to {db_version}")
+        print(f"Connected to {db_version}")
 
-    cursor.close()
-    connection.close()
+        cursor.close()
+        connection.close()
 
-except Exception as error:
-    print(f"Error coonecting to database: {error}")
+    except Exception as error:
+        print(f"Error coonecting to database: {error}")
+
+connect_to_db(host,database,user,password)
+
+
