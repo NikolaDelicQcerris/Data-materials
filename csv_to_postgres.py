@@ -21,6 +21,23 @@ def connect_to_db(host, database, user, password):
         print(f"Error connecting to database: {error}")
         return None
 
+def infer_schema(df):
+    sch_map={
+        "object" : "TEXT",
+        "int64" : "INTEGER",
+        "float64" : "REAL",
+        "datetime64[ns]" : "TIMESTAMP",
+        "bool" : "BOOLEAN"
+        }
+
+    columns_def=[]
+    for column, dtype in df.dtypes.items():
+        pg_type = sch_map.get(str(dtype),"TEXT")
+        columns_def.append(f"{column} {pg_type}")
+            
+        return ", ".join(columns_def)
+
+
 csv_file_path = '/home/qcerris/Desktop/Data-project/Data-materials/cars.csv'
 table_name = 'cars'
 
@@ -36,42 +53,9 @@ connection = connect_to_db(host=host, database=database, user=user, password=pas
 if connection:
     with connection:
         with connection.cursor() as cursor:
-            cursor.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table_name}'")
-            pg_columns = [row[0] for row in cursor.fetchall()]
-
-            print("PostgreSQL columns:", pg_columns)
-
-            csv_to_pg_column_map = {
-                'symboling': 'symboling',
-                'normalized-losses': 'normalized-losses',
-                'make': 'make',
-                'fuel-type': 'fuel-type',
-                'aspiration': 'aspiration',
-                'num-of-doors': 'num-of-doors',
-                'body-style': 'body-style',
-                'drive-wheels': 'drive-wheels',
-                'engine-location': 'engine-location',
-                'wheel-base': 'wheel-base',
-                'length': 'length',
-                'width': 'width',
-                'height': 'height',
-                'curb-weight': 'curb-weight',
-                'engine-type': 'engine-type',
-                'num-of-cylinders': 'num-of-cylinders',
-                'engine-size': 'engine-size',
-                'fuel-system': 'fuel-system',
-                'bore': 'bore',
-                'stroke': 'stroke',
-                'compression-ratio': 'compression-ratio',
-                'horsepower': 'horsepower',
-                'peak-rpm': 'peak-rpm',
-                'city-mpg': 'city-mpg',
-                'highway-mpg': 'highway-mpg',
-                'price': 'price'
-            }
-
-            df = df.rename(columns=csv_to_pg_column_map)
-            df = df[pg_columns]
+            schema=infer_schema(df)
+            create_table_query = f"CREATE TABLE IF NOT EXISTS {table_name} ({schema})"
+            cursor.execute(create_table_query)
 
             columns = list(df.columns)
             column_str = ', '.join(columns)
